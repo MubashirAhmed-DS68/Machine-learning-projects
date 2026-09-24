@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Room Type Intelligence — NYC Airbnb Prediction Engine</title>
+<meta name="description" content="Predict Airbnb listing room type from location, price and engagement signals using a scikit-learn classification pipeline served by FastAPI." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#predict">Skip to prediction form</a>
+
+<!-- ============================== NAVBAR ============================== -->
+<header class="navbar">
+  <div class="navbar-inner">
+    <a class="brand" href="#overview">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10l8-6 8 6v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 20v-6h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">Room Type Intelligence</span>
+        <span class="brand-tag">NYC Airbnb Prediction Engine</span>
+      </span>
+    </a>
+
+    <nav class="navbar-links" aria-label="Primary">
+      <a href="#overview">Overview</a>
+      <a href="#predict">Prediction</a>
+      <a href="#model">Model</a>
+    </nav>
+
+    <div class="navbar-status" id="apiStatus">
+      <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+      <span id="statusText">Checking API…</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================== HERO ============================== -->
+  <section class="hero" id="overview">
+    <div class="hero-inner">
+      <p class="eyebrow">Machine learning · Multiclass classification</p>
+      <h1>Predict Airbnb room type from listing signals</h1>
+      <p class="hero-lede">
+        A scikit-learn classification pipeline, trained on the NYC Airbnb Open Data set,
+        infers whether a listing is an entire home, a private room, or a shared room —
+        from its location, price and booking history. Served live through a FastAPI endpoint.
+      </p>
+
+      <div class="stat-row" role="list">
+        <div class="stat-chip" role="listitem">
+          <span class="stat-value">84.4%</span>
+          <span class="stat-label">Test accuracy</span>
+        </div>
+        <div class="stat-chip" role="listitem">
+          <span class="stat-value">0.73</span>
+          <span class="stat-label">Macro F1</span>
+        </div>
+        <div class="stat-chip" role="listitem">
+          <span class="stat-value">3</span>
+          <span class="stat-label">Target classes</span>
+        </div>
+        <div class="stat-chip" role="listitem">
+          <span class="stat-value">10</span>
+          <span class="stat-label">Input features</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== PREDICTION WORKSPACE ======================== -->
+  <section class="workspace" id="predict">
+    <div class="workspace-inner">
+
+      <!-- ---------------------- Configuration form ---------------------- -->
+      <form class="panel form-panel" id="predictForm" novalidate aria-labelledby="formTitle">
+        <div class="panel-header">
+          <h2 id="formTitle">Listing configuration</h2>
+          <p>Fill in the fields below exactly as they would appear on a live listing.</p>
+        </div>
+
+        <!-- Location -->
+        <fieldset class="field-group">
+          <legend>
+            <span class="legend-icon loc" aria-hidden="true"></span>
+            Location
+          </legend>
+
+          <div class="field">
+            <label for="neighbourhood_group">Borough</label>
+            <select id="neighbourhood_group" name="neighbourhood_group" required aria-describedby="msg-neighbourhood_group">
+              <option value="" disabled selected>Select a borough</option>
+              <option value="Manhattan">Manhattan</option>
+              <option value="Brooklyn">Brooklyn</option>
+              <option value="Queens">Queens</option>
+              <option value="Bronx">Bronx</option>
+              <option value="Staten Island">Staten Island</option>
+            </select>
+            <p class="field-msg" id="msg-neighbourhood_group" data-default="Required — used directly by the model's categorical encoder."></p>
+          </div>
+
+          <div class="field">
+            <label for="neighbourhood">Neighbourhood</label>
+            <input type="text" id="neighbourhood" name="neighbourhood" required minlength="1"
+                   placeholder="e.g. Williamsburg" list="neighbourhoodList" autocomplete="off"
+                   aria-describedby="msg-neighbourhood" />
+            <datalist id="neighbourhoodList"></datalist>
+            <p class="field-msg" id="msg-neighbourhood" data-default="Free text — suggestions update once you pick a borough."></p>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="latitude">Latitude</label>
+              <input type="number" id="latitude" name="latitude" required step="any" min="-90" max="90"
+                     placeholder="40.7128" aria-describedby="msg-latitude" />
+              <p class="field-msg" id="msg-latitude" data-default="Range: −90 to 90."></p>
+            </div>
+            <div class="field">
+              <label for="longitude">Longitude</label>
+              <input type="number" id="longitude" name="longitude" required step="any" min="-180" max="180"
+                     placeholder="-74.0060" aria-describedby="msg-longitude" />
+              <p class="field-msg" id="msg-longitude" data-default="Range: −180 to 180."></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Pricing & availability -->
+        <fieldset class="field-group">
+          <legend>
+            <span class="legend-icon price" aria-hidden="true"></span>
+            Pricing &amp; availability
+          </legend>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="price">Price per night (USD)</label>
+              <input type="number" id="price" name="price" required step="0.01" min="0.01"
+                     placeholder="150" aria-describedby="msg-price" />
+              <p class="field-msg" id="msg-price" data-default="Must be greater than 0."></p>
+            </div>
+            <div class="field">
+              <label for="minimum_nights">Minimum nights</label>
+              <input type="number" id="minimum_nights" name="minimum_nights" required step="1" min="1" max="365"
+                     placeholder="3" aria-describedby="msg-minimum_nights" />
+              <p class="field-msg" id="msg-minimum_nights" data-default="Whole number, 1–365."></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="availability_365">Available days per year</label>
+            <input type="number" id="availability_365" name="availability_365" required step="1" min="0" max="365"
+                   placeholder="180" aria-describedby="msg-availability_365" />
+            <p class="field-msg" id="msg-availability_365" data-default="Whole number, 0–365."></p>
+          </div>
+        </fieldset>
+
+        <!-- Engagement signals -->
+        <fieldset class="field-group">
+          <legend>
+            <span class="legend-icon signal" aria-hidden="true"></span>
+            Engagement signals
+          </legend>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="number_of_reviews">Number of reviews</label>
+              <input type="number" id="number_of_reviews" name="number_of_reviews" required step="1" min="0"
+                     placeholder="24" aria-describedby="msg-number_of_reviews" />
+              <p class="field-msg" id="msg-number_of_reviews" data-default="Whole number, 0 or more."></p>
+            </div>
+            <div class="field">
+              <label for="reviews_per_month">Reviews per month</label>
+              <input type="number" id="reviews_per_month" name="reviews_per_month" required step="0.01" min="0"
+                     placeholder="1.2" aria-describedby="msg-reviews_per_month" />
+              <p class="field-msg" id="msg-reviews_per_month" data-default="Decimal, 0 or more."></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="calculated_host_listings_count">Host's total listings</label>
+            <input type="number" id="calculated_host_listings_count" name="calculated_host_listings_count" required step="1" min="0"
+                   placeholder="1" aria-describedby="msg-calculated_host_listings_count" />
+            <p class="field-msg" id="msg-calculated_host_listings_count" data-default="Whole number, 0 or more."></p>
+          </div>
+        </fieldset>
+
+        <div class="form-footer">
+          <p class="form-error" id="formError" role="alert" aria-live="assertive"></p>
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <span class="btn-icon" aria-hidden="true">✦</span>
+            <span class="btn-label">Generate prediction</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- ---------------------- Result dashboard ---------------------- -->
+      <aside class="panel result-panel" id="resultPanel" aria-live="polite" aria-labelledby="resultTitle">
+        <div class="panel-header">
+          <h2 id="resultTitle">Prediction</h2>
+          <p>Live output from the <code>/predict</code> endpoint.</p>
+        </div>
+
+        <div class="result-body">
+
+          <div class="state" id="stateIdle">
+            <div class="state-icon idle" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="6" width="36" height="36" rx="8" stroke="currentColor" stroke-width="2"/><path d="M16 26l5 5 11-13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <p class="state-title">No prediction yet</p>
+            <p class="state-text">Complete the form and press <strong>Generate prediction</strong> to run the model.</p>
+          </div>
+
+          <div class="state" id="stateLoading" hidden>
+            <div class="skeleton-block"></div>
+            <div class="skeleton-line" style="width:60%"></div>
+            <div class="skeleton-line" style="width:85%"></div>
+            <p class="state-text loading-text">Analyzing data…</p>
+          </div>
+
+          <div class="state" id="stateError" hidden>
+            <div class="state-icon error" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2"/><path d="M24 15v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="24" cy="33" r="1.8" fill="currentColor"/></svg>
+            </div>
+            <p class="state-title" id="errorTitle">Unable to connect to the prediction service</p>
+            <p class="state-text" id="errorDetail">Please make sure the API server is running.</p>
+          </div>
+
+          <div class="state state-result" id="stateResult" hidden>
+            <div class="result-headline">
+              <span class="result-badge" id="resultBadge">Predicted room type</span>
+              <h3 class="result-value" id="resultLabel">—</h3>
+            </div>
+
+            <div class="confidence-block">
+              <div class="confidence-top">
+                <span>Confidence</span>
+                <span class="confidence-number" id="confidenceNumber">0%</span>
+              </div>
+              <div class="confidence-track">
+                <div class="confidence-fill" id="confidenceFill"></div>
+              </div>
+            </div>
+
+            <div class="prob-bars" id="probBars"></div>
+
+            <details class="raw-toggle">
+              <summary>View raw API response</summary>
+              <div class="raw-actions">
+                <button type="button" class="btn-ghost" id="copyRawBtn">Copy JSON</button>
+              </div>
+              <pre class="raw-json" id="rawJson"></pre>
+            </details>
+          </div>
+
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+  <!-- ============================== MODEL INFO ============================== -->
+  <section class="model-info" id="model">
+    <div class="model-info-inner">
+      <div class="model-card">
+        <h3>Pipeline</h3>
+        <p>Random forest classifier inside a scikit-learn <code>ColumnTransformer</code> pipeline — median-imputed &amp; scaled numeric features, most-frequent-imputed &amp; one-hot encoded categorical features.</p>
+      </div>
+      <div class="model-card">
+        <h3>Target classes</h3>
+        <p><code>Entire home/apt</code>, <code>Private room</code>, <code>Shared room</code> — inferred from the ten listing fields on the left.</p>
+      </div>
+      <div class="model-card">
+        <h3>Serving layer</h3>
+        <p>FastAPI exposes a single <code>POST /predict</code> endpoint; this page is the only client and talks to it directly over HTTP.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================== FOOTER ============================== -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark small" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10l8-6 8 6v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span>Room Type Intelligence</span>
+    </div>
+
+    <div class="footer-badges">
+      <span class="badge">FastAPI</span>
+      <span class="badge">scikit-learn</span>
+      <span class="badge">Vanilla JS</span>
+    </div>
+
+    <div class="footer-config">
+      <label for="apiBaseInput">API base URL</label>
+      <input type="text" id="apiBaseInput" spellcheck="false" />
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

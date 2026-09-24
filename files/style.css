@@ -1,0 +1,556 @@
+/* ==========================================================================
+   Design tokens
+   ========================================================================== */
+:root {
+  /* base palette — dusk-over-Manhattan gradient, lit by sign colors */
+  --bg: #201347;
+  --bg-grid: #2a1a5e;
+  --surface: rgba(43, 27, 82, 0.55);
+  --surface-raised: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.14);
+
+  --text: #f5f2ff;
+  --text-muted: #c3b8e8;
+
+  /* accent — cab-yellow / N,Q,R,W line yellow */
+  --accent: #ffd23f;
+  --accent-ink: #241900;
+
+  /* room-type colors, borrowed from real MTA line colors */
+  --entire: #2fd47c;   /* like the 4/5/6, brightened */
+  --private: #ff8a3d;  /* like the B/D/F/M, brightened */
+  --shared: #4d8dff;   /* like the A/C/E, brightened */
+
+  --danger: #ff5d6c;
+  --line-muted: #5c4f96;
+
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  --font-display: "Oswald", "Arial Narrow", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 900px 600px at 10% -10%, rgba(77, 141, 255, 0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 600px at 95% 0%, rgba(255, 210, 63, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 900px 700px at 50% 100%, rgba(255, 60, 172, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 600px at 90% 90%, rgba(47, 212, 124, 0.3) 0%, transparent 55%),
+    linear-gradient(160deg, #2a1a5e 0%, #201347 45%, #3a1650 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* subtle street-grid texture behind everything */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+/* ==========================================================================
+   Line strip + header
+   ========================================================================== */
+.line-strip {
+  display: flex;
+  height: 6px;
+  width: 100%;
+}
+.line-strip span {
+  flex: 1;
+}
+
+.site-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px clamp(20px, 5vw, 56px) 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-display);
+}
+.brand-mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+.brand-sub {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.status-dot.online {
+  background: var(--entire);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--entire) 70%, transparent);
+}
+.status-dot.offline {
+  background: var(--danger);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+/* ==========================================================================
+   Hero
+   ========================================================================== */
+.hero {
+  position: relative;
+  z-index: 1;
+  padding: 28px clamp(20px, 5vw, 56px) 8px;
+  max-width: 780px;
+  animation: rise-in 0.6s ease both;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+.hero p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 62ch;
+  margin: 0;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+.layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+  gap: 24px;
+  padding: 24px clamp(20px, 5vw, 56px) 40px;
+  align-items: start;
+}
+
+@media (max-width: 880px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Form panel + cards
+   ========================================================================== */
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--shared);
+  border-radius: var(--radius);
+  padding: 20px 22px 22px;
+  margin: 0;
+  box-shadow: 0 10px 30px rgba(20, 8, 50, 0.35);
+  animation: rise-in 0.5s ease both;
+}
+.card:nth-of-type(1) { border-left-color: var(--shared); }
+.card:nth-of-type(2) { border-left-color: var(--accent); animation-delay: 0.06s; }
+.card:nth-of-type(3) { border-left-color: var(--entire); animation-delay: 0.12s; }
+
+.card:nth-of-type(1) legend { color: var(--shared); }
+.card:nth-of-type(2) legend { color: var(--accent); }
+.card:nth-of-type(3) legend { color: var(--entire); }
+
+.card legend {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0 6px;
+  color: var(--accent);
+}
+
+.field {
+  margin-top: 14px;
+}
+.field:first-child {
+  margin-top: 4px;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+.field-row .field {
+  margin-top: 0;
+}
+@media (max-width: 480px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+input, select {
+  width: 100%;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+/* the dropdown popup itself is rendered by the OS/browser, not by our
+   translucent glass styles — give it an explicit solid, theme-matching
+   background so option text isn't light-on-white and unreadable */
+select {
+  color-scheme: dark;
+}
+select option {
+  background: #2b1b52;
+  color: var(--text);
+}
+select option:checked,
+select option:hover {
+  background: var(--shared);
+  color: #ffffff;
+}
+
+/* custom select: hide the native arrow, style the dropdown list, add our own animated chevron */
+.select-wrap {
+  position: relative;
+}
+.select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* "light" here only affects the OS-drawn option list below, not the
+     select box itself — dark forced near-white text onto that list's
+     white background, which is why the options were unreadable. */
+  color-scheme: light;
+  padding-right: 38px;
+  cursor: pointer;
+}
+.select-wrap select option {
+  background: #ffffff;
+  color: #241a4a;
+  font-weight: 500;
+  padding: 10px;
+}
+.select-wrap select option:checked,
+.select-wrap select option:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 42%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-50%) rotate(45deg);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease;
+  pointer-events: none;
+}
+.select-wrap:hover::after {
+  border-color: var(--entire);
+}
+.select-wrap:focus-within::after {
+  transform: translateY(-20%) rotate(225deg) scale(1.2);
+  border-color: var(--accent);
+}
+.select-wrap:focus-within select {
+  animation: select-glow 1.4s ease-in-out infinite;
+}
+@keyframes select-glow {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 40%, transparent); }
+}
+
+input:hover, select:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+input:invalid:not(:placeholder-shown) {
+  border-color: var(--danger);
+}
+
+.hint {
+  margin: 6px 2px 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.submit-btn {
+  position: relative;
+  align-self: flex-start;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.submit-btn:active {
+  transform: translateY(0);
+}
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  min-height: 1.2em;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Result panel
+   ========================================================================== */
+.result-panel {
+  position: sticky;
+  top: 20px;
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 26px;
+  min-height: 320px;
+  box-shadow: 0 10px 30px rgba(20, 8, 50, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  animation: rise-in 0.5s ease 0.1s both;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.state p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.idle-icon, .error-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--text-muted);
+}
+.error-icon {
+  color: var(--danger);
+}
+.error-title {
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+/* loading train animation */
+.train-track {
+  width: 100%;
+  max-width: 220px;
+  height: 40px;
+}
+#trainDot circle {
+  animation: travel 1.4s ease-in-out infinite;
+}
+@keyframes travel {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(180px); }
+  100% { transform: translateX(0); }
+}
+
+/* result */
+.result-eyebrow {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+.result-label {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 600;
+  margin: 4px 0 18px;
+  animation: pop-in 0.4s ease both;
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.prob-bars {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prob-row {
+  text-align: left;
+}
+.prob-row-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.prob-row-top .prob-value {
+  color: var(--text);
+  font-weight: 600;
+}
+.prob-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+.prob-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.site-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 18px clamp(20px, 5vw, 56px) 32px;
+}
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+}
+.footer-inner label {
+  margin: 0;
+  white-space: nowrap;
+}
+.footer-inner input {
+  width: auto;
+  flex: 1 1 260px;
+  font-size: 0.85rem;
+  padding: 7px 10px;
+}
+.footer-note {
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.footer-note code {
+  background: var(--surface-raised);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

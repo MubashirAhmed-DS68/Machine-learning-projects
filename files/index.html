@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Room Type Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Thin multi-color strip, styled after an MTA subway line indicator -->
+  <div class="line-strip" aria-hidden="true">
+    <span style="background:#00933C"></span>
+    <span style="background:#FF6319"></span>
+    <span style="background:#0039A6"></span>
+    <span style="background:#FCCC0A"></span>
+    <span style="background:#EE352E"></span>
+  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark">NYC</span>
+      <span class="brand-sub">Room Type Predictor</span>
+    </div>
+    <div class="api-status" id="apiStatus" role="status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Checking API…</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>What kind of stay is this listing?</h1>
+    <p>Enter a listing's location, price and booking history. The model behind this page — trained on the NYC Airbnb open dataset — predicts whether it's an entire place, a private room, or a shared room.</p>
+  </section>
+
+  <main class="layout">
+    <form id="predictForm" class="form-panel" novalidate>
+
+      <fieldset class="card">
+        <legend>Location</legend>
+
+        <div class="field">
+          <label for="neighbourhood_group">Borough</label>
+          <select id="neighbourhood_group" name="neighbourhood_group" required>
+            <option value="" disabled selected>Select a borough</option>
+            <option value="Manhattan">Manhattan</option>
+            <option value="Brooklyn">Brooklyn</option>
+            <option value="Queens">Queens</option>
+            <option value="Bronx">Bronx</option>
+            <option value="Staten Island">Staten Island</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="neighbourhood">Neighbourhood</label>
+          <input
+            type="text"
+            id="neighbourhood"
+            name="neighbourhood"
+            required
+            minlength="1"
+            placeholder="e.g. Williamsburg"
+            list="neighbourhoodList"
+            autocomplete="off"
+          />
+          <datalist id="neighbourhoodList"></datalist>
+          <p class="hint">Pick a borough for suggestions, or type any neighbourhood name.</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="latitude">Latitude</label>
+            <input type="number" id="latitude" name="latitude" required step="any" min="-90" max="90" placeholder="40.7128" />
+          </div>
+          <div class="field">
+            <label for="longitude">Longitude</label>
+            <input type="number" id="longitude" name="longitude" required step="any" min="-180" max="180" placeholder="-74.0060" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Pricing &amp; stay</legend>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="price">Price per night ($)</label>
+            <input type="number" id="price" name="price" required step="0.01" min="0.01" placeholder="150" />
+          </div>
+          <div class="field">
+            <label for="minimum_nights">Minimum nights</label>
+            <input type="number" id="minimum_nights" name="minimum_nights" required step="1" min="1" max="365" placeholder="3" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card">
+        <legend>Track record</legend>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="number_of_reviews">Number of reviews</label>
+            <input type="number" id="number_of_reviews" name="number_of_reviews" required step="1" min="0" placeholder="24" />
+          </div>
+          <div class="field">
+            <label for="reviews_per_month">Reviews per month</label>
+            <input type="number" id="reviews_per_month" name="reviews_per_month" required step="0.01" min="0" placeholder="1.2" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="calculated_host_listings_count">Host's total listings</label>
+            <input type="number" id="calculated_host_listings_count" name="calculated_host_listings_count" required step="1" min="0" placeholder="1" />
+          </div>
+          <div class="field">
+            <label for="availability_365">Available days / year</label>
+            <input type="number" id="availability_365" name="availability_365" required step="1" min="0" max="365" placeholder="180" />
+          </div>
+        </div>
+      </fieldset>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span class="btn-label">Predict room type</span>
+      </button>
+
+      <p class="form-error" id="formError" role="alert" aria-live="assertive"></p>
+    </form>
+
+    <aside class="result-panel" id="resultPanel" aria-live="polite">
+
+      <div class="state state-idle" id="stateIdle">
+        <svg class="idle-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="3"/>
+          <path d="M14 54c0-11 8-18 18-18s18 7 18 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <p>Fill in the listing details and press <strong>Predict room type</strong> to see a result here.</p>
+      </div>
+
+      <div class="state state-loading" id="stateLoading" hidden>
+        <svg class="train-track" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="10" y1="20" x2="190" y2="20" stroke="var(--line-muted)" stroke-width="2" stroke-dasharray="6 6" />
+          <g id="trainDot">
+            <circle cx="10" cy="20" r="7" fill="var(--accent)" />
+          </g>
+        </svg>
+        <p>Running the model…</p>
+      </div>
+
+      <div class="state state-error" id="stateError" hidden>
+        <svg class="error-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="32" y1="18" x2="32" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="46" r="2.5" fill="currentColor"/>
+        </svg>
+        <p class="error-title">Couldn't get a prediction</p>
+        <p class="error-detail" id="errorDetail"></p>
+      </div>
+
+      <div class="state state-result" id="stateResult" hidden>
+        <p class="result-eyebrow">Predicted room type</p>
+        <p class="result-label" id="resultLabel">—</p>
+
+        <div class="prob-bars" id="probBars"></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <label for="apiBaseInput">API base URL</label>
+      <input type="text" id="apiBaseInput" spellcheck="false" />
+      <span class="footer-note">Points at the FastAPI service in <code>main.py</code> (default <code>http://127.0.0.1:8000</code>).</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
