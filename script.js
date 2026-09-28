@@ -19,7 +19,7 @@
   // --------------------------------------------------------------------
   // Config & constants
   // --------------------------------------------------------------------
-  const DEFAULT_API_BASE = "http://127.0.0.1:8001";
+  const DEFAULT_API_BASE = "";
   const API_BASE_KEY = "room-type-api-base";
 
   // best_pipeline in the notebook is a plain scikit-learn classifier, whose
