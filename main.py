@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 import pandas as pd
-from pydantic import BaseModel , Field
+from pydantic import BaseModel, Field
 import joblib
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 
@@ -47,8 +51,16 @@ class Features(BaseModel):
 model =  joblib.load("Model_pipeline.pkl")
 
 @app.get('/')
-def greet():
-    return "hello Guyss"
+def home():
+    return FileResponse(os.path.join(BASE_DIR, "index.html"))
+
+@app.get('/style.css')
+def get_css():
+    return FileResponse(os.path.join(BASE_DIR, "style.css"))
+
+@app.get('/script.js')
+def get_js():
+    return FileResponse(os.path.join(BASE_DIR, "script.js"))
 
 
 
